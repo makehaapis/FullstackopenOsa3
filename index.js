@@ -7,44 +7,17 @@ const Person = require('./models/person')
 
 app.use(express.static('build'))
 app.use(express.json())
-morgan.token('body', (req, res) => JSON.stringify(req.body))
+morgan.token('body', (req) => JSON.stringify(req.body))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 app.use(cors())
 
-
-
-let persons = [
-  { 
-    "name": "Arto Hellas", 
-    "number": "040-123456",
-    "id": 1
-  },
-  { 
-    "name": "Ada Lovelace", 
-    "number": "39-44-5323523",
-    "id": 2
-  },
-  { 
-    "name": "Dan Abramov", 
-    "number": "12-43-234345",
-    "id": 3
-  },
-  { 
-    "name": "Mary Poppendieck", 
-    "number": "39-23-6423122",
-    "id": 4
-  }
-]
-
-
-
-
-
 app.get('/info', (request, response) => {
-  const personsLength = persons.length
-  const date = new Date()
-  response.send(`<p>Phonebook has info for ${personsLength} people</p>
-  <p>${date}</p>`)
+  Person.find({}).then(persons => {
+    const personsLength = persons.length
+    const date = new Date()
+    response.send(`<p>Phonebook has info for ${personsLength} people</p>
+    <p>${date}</p>`)
+  })
 })
 
 app.get('/api/persons', (request, response) => {
@@ -57,12 +30,12 @@ app.get('/api/persons/:id', (request, response, next) => {
   Person.findById(request.params.id)
     .then(person => {
       if (person) {
-      response.json(person)
-    } else {
-      response.status(404).end()
-    }
-  })
-  .catch(error => next(error))
+        response.json(person)
+      } else {
+        response.status(404).end()
+      }
+    })
+    .catch(error => next(error))
 })
 
 app.post('/api/persons', (request, response, next) => {
@@ -80,12 +53,12 @@ app.post('/api/persons', (request, response, next) => {
     .catch(error => next(error))
 })
 
-const regex = "^\d{2,3}-\d{5,8}$"
-
 app.delete('/api/persons/:id', (request, response, next) => {
   Person.findByIdAndRemove(request.params.id)
     .then(result => {
-      response.status(204).end()
+      if (result) {
+        response.status(204).end()
+      }
     })
     .catch(error => next(error))
 })
@@ -97,7 +70,7 @@ app.put('/api/persons/:id', (request, response, next) => {
     request.params.id,
     { name, number},
     { new: true, runValidators: true, context: 'query'}
-)
+  )
     .then(updatedPerson => {
       response.json(updatedPerson)
     })
